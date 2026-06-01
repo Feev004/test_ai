@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenRouter Chat</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; }
+      textarea { width: 100%; height: 100px; }
+      #resp { white-space: pre-wrap; background:#f6f6f6; padding:12px; border-radius:6px; }
+    </style>
+  </head>
+  <body>
+    <h1>OpenRouter Chat</h1>
+    <form id="form">
+      <label for="msg">Message</label>
+      <textarea id="msg" placeholder="Say something...">Hello</textarea>
+      <br /><br />
+      <button type="submit">Send</button>
+    </form>
+
+    <h2>Response</h2>
+    <div id="resp">No response yet.</div>
+
+    <script>
+      const form = document.getElementById('form');
+      const msg = document.getElementById('msg');
+      const resp = document.getElementById('resp');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        resp.textContent = 'Waiting...';
+        try {
+          const r = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg.value }),
+          });
+          const data = await r.json();
+          if (data.error) {
+            resp.textContent = 'Error: ' + data.error;
+            return;
+          }
+          resp.textContent = data.text || JSON.stringify(data.raw, null, 2);
+        } catch (err) {
+          resp.textContent = 'Request failed: ' + err;
+        }
+      });
+    </script>
+  </body>
+</html>
