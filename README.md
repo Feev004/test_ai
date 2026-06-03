@@ -22,6 +22,8 @@ python API.py "Hello from me"
 
 If no message is provided, the script will ask "What is the meaning of life?" by default.
 
+=======================================================================================
+
 Web UI
 ------
 
@@ -44,3 +46,22 @@ python index.py
 ```
 
 Open http://localhost:5000 in your browser.
+
+=======================================================================================
+
+Optional ngrok tunnel
+---------------------
+
+If you want to expose the app through ngrok, install dependencies and run:
+
+```bash
+python index.py --ngrok
+```
+
+If you have an ngrok authtoken, you can set it with:
+
+```powershell
+$env:NGROK_AUTHTOKEN = "<your-token>"
+```
+
+The public ngrok URL will be printed when the app starts.
