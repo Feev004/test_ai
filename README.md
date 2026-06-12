@@ -63,5 +63,6 @@ If you have an ngrok authtoken, you can set it with:
 ```powershell
 $env:NGROK_AUTHTOKEN = "<your-token>"
 ```
+python .\index.py --ngrok
 
 The public ngrok URL will be printed when the app starts.
