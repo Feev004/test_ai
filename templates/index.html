@@ -3,33 +3,113 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OpenRouter Chat</title>
+    <title>Report Management System</title>
     <style>
-      body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; }
-      textarea { width: 100%; height: 100px; }
-      #resp { white-space: pre-wrap; background:#f6f6f6; padding:12px; border-radius:6px; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+      .container { max-width: 1200px; margin: 0 auto; }
+      h1 { color: #333; margin-bottom: 30px; text-align: center; }
+      h2 { color: #444; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+      
+      .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+      .tab-btn { padding: 10px 20px; background: #ddd; border: none; cursor: pointer; border-radius: 4px; }
+      .tab-btn.active { background: #007bff; color: white; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      
+      form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #333; }
+      input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial, sans-serif; }
+      textarea { min-height: 100px; resize: vertical; }
+      button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+      button:hover { background: #0056b3; }
+      button.delete { background: #dc3545; margin-left: 10px; }
+      button.delete:hover { background: #c82333; }
+      button.edit { background: #28a745; }
+      button.edit:hover { background: #218838; }
+      
+      .report-item { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .report-title { font-size: 18px; font-weight: bold; color: #007bff; margin-bottom: 10px; }
+      .report-content { color: #666; margin-bottom: 10px; }
+      .report-ai { background: #f0f0f0; padding: 10px; margin-bottom: 10px; border-left: 3px solid #007bff; color: #333; }
+      .report-meta { font-size: 12px; color: #999; margin-bottom: 10px; }
+      .report-actions { display: flex; gap: 5px; }
+      
+      .response { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .success { color: #28a745; }
+      .error { color: #dc3545; }
+      .info { color: #17a2b8; }
+      
+      .empty-state { text-align: center; color: #999; padding: 40px; }
+      
+      #reportsList { max-height: 600px; overflow-y: auto; }
     </style>
   </head>
   <body>
-    <h1>OpenRouter Chat</h1>
-    <form id="form">
-      <label for="msg">Message</label>
-      <textarea id="msg" placeholder="Say something...">Hello</textarea>
-      <br /><br />
-      <button type="submit">Send</button>
-    </form>
-
-    <h2>Response</h2>
-    <div id="resp">No response yet.</div>
+    <div class="container">
+      <h1>📊 Report Management System</h1>
+      
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('chat')">💬 Chat</button>
+        <button class="tab-btn" onclick="showTab('reports')">📋 Reports</button>
+      </div>
+      
+      <!-- Chat Tab -->
+      <div id="chat" class="tab-content active">
+        <h2>OpenRouter Chat</h2>
+        <form id="chatForm">
+          <label for="msg">Message</label>
+          <textarea id="msg" placeholder="Say something...">Hello</textarea>
+          <button type="submit">Send</button>
+        </form>
+        <div class="response" id="chatResp">No response yet.</div>
+      </div>
+      
+      <!-- Reports Tab -->
+      <div id="reports" class="tab-content">
+        <!-- Create/Edit Report Form -->
+        <h2>Create New Report</h2>
+        <form id="reportForm">
+          <input type="hidden" id="reportId" />
+          
+          <label for="reportTitle">Report Title</label>
+          <input type="text" id="reportTitle" placeholder="Enter report title" required />
+          
+          <label for="reportContent">Report Content</label>
+          <textarea id="reportContent" placeholder="Enter report content..."></textarea>
+          
+          <button type="submit" id="submitBtn">Create Report</button>
+          <button type="button" id="cancelBtn" style="display:none; background:#6c757d;" onclick="resetForm()">Cancel</button>
+        </form>
+        
+        <!-- Reports List -->
+        <h2>All Reports</h2>
+        <button onclick="loadReports()" style="margin-bottom: 15px;">🔄 Refresh</button>
+        <div id="reportsList" class="empty-state">Loading reports...</div>
+      </div>
+    </div>
 
     <script>
-      const form = document.getElementById('form');
-      const msg = document.getElementById('msg');
-      const resp = document.getElementById('resp');
+      // Tab switching
+      function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
+        
+        if (tabName === 'reports') {
+          loadReports();
+        }
+      }
 
-      form.addEventListener('submit', async (e) => {
+      // Chat functionality
+      const chatForm = document.getElementById('chatForm');
+      const msg = document.getElementById('msg');
+      const chatResp = document.getElementById('chatResp');
+
+      chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        resp.textContent = 'Waiting...';
+        chatResp.textContent = 'Waiting...';
         try {
           const r = await fetch('/api/chat', {
             method: 'POST',
@@ -38,14 +118,132 @@
           });
           const data = await r.json();
           if (data.error) {
-            resp.textContent = 'Error: ' + data.error;
+            chatResp.innerHTML = `<span class="error">Error: ${data.error}</span>`;
             return;
           }
-          resp.textContent = data.text || JSON.stringify(data.raw, null, 2);
+          chatResp.textContent = data.text || JSON.stringify(data.raw, null, 2);
         } catch (err) {
-          resp.textContent = 'Request failed: ' + err;
+          chatResp.innerHTML = `<span class="error">Request failed: ${err}</span>`;
         }
       });
+
+      // Reports functionality
+      const reportForm = document.getElementById('reportForm');
+      const reportId = document.getElementById('reportId');
+      const reportTitle = document.getElementById('reportTitle');
+      const reportContent = document.getElementById('reportContent');
+      const submitBtn = document.getElementById('submitBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+
+      reportForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const isEdit = reportId.value !== '';
+        const url = isEdit ? `/api/reports/${reportId.value}` : '/api/reports';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        try {
+          const r = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: reportTitle.value,
+              content: reportContent.value,
+            }),
+          });
+          
+          if (!r.ok) {
+            const error = await r.json();
+            alert('Error: ' + (error.error || 'Unknown error'));
+            return;
+          }
+          
+          alert(isEdit ? 'Report updated!' : 'Report created!');
+          resetForm();
+          loadReports();
+        } catch (err) {
+          alert('Request failed: ' + err);
+        }
+      });
+
+      function resetForm() {
+        reportId.value = '';
+        reportTitle.value = '';
+        reportContent.value = '';
+        submitBtn.textContent = 'Create Report';
+        submitBtn.style.background = '#007bff';
+        cancelBtn.style.display = 'none';
+      }
+
+      async function loadReports() {
+        try {
+          const r = await fetch('/api/reports');
+          const reports = await r.json();
+          
+          const reportsList = document.getElementById('reportsList');
+          
+          if (reports.length === 0) {
+            reportsList.innerHTML = '<div class="empty-state">No reports yet. Create one above!</div>';
+            return;
+          }
+          
+          reportsList.innerHTML = reports.map(report => `
+            <div class="report-item">
+              <div class="report-title">${escapeHtml(report.title)}</div>
+              <div class="report-meta">📅 Created: ${new Date(report.created_at).toLocaleString()}</div>
+              <div class="report-content"><strong>Content:</strong> ${escapeHtml(report.content || '(empty)')}</div>
+              ${report.ai_response ? `<div class="report-ai"><strong>AI Response:</strong> ${escapeHtml(report.ai_response)}</div>` : ''}
+              <div class="report-actions">
+                <button class="edit" onclick="editReport(${report.id})">Edit</button>
+                <button class="delete" onclick="deleteReport(${report.id})">Delete</button>
+              </div>
+            </div>
+          `).join('');
+        } catch (err) {
+          document.getElementById('reportsList').innerHTML = `<div class="error">Failed to load reports: ${err}</div>`;
+        }
+      }
+
+      async function editReport(id) {
+        try {
+          const r = await fetch(`/api/reports/${id}`);
+          const report = await r.json();
+          
+          reportId.value = report.id;
+          reportTitle.value = report.title;
+          reportContent.value = report.content || '';
+          submitBtn.textContent = 'Update Report';
+          submitBtn.style.background = '#28a745';
+          cancelBtn.style.display = 'inline-block';
+          
+          reportTitle.focus();
+          window.scrollTo(0, 0);
+        } catch (err) {
+          alert('Failed to load report: ' + err);
+        }
+      }
+
+      async function deleteReport(id) {
+        if (!confirm('Are you sure you want to delete this report?')) return;
+        
+        try {
+          const r = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+          if (r.ok) {
+            alert('Report deleted!');
+            loadReports();
+          } else {
+            alert('Failed to delete report');
+          }
+        } catch (err) {
+          alert('Request failed: ' + err);
+        }
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
     </script>
   </body>
 </html>
